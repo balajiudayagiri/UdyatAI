@@ -115,7 +115,7 @@ Please provide a well-structured response using proper formatting.`,
           </div>
         )}
       </div>
-      <div className="w-full max-w-2xl mx-auto my-5 max-md:mb-10">
+      <div className="w-full max-w-2xl mx-auto my-5 max-md:mb-15 max-md:mx-3">
         <PlaceholdersAndVanishInput
           placeholders={placeholders}
           onChange={handleChange}
