@@ -249,10 +249,11 @@ Let's start with your ${missing[0]}. Please provide the details.`,
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!input) return;
+    if (!input || loading) return;
 
     try {
       setLoading(true);
+      setInput(""); // Clear input immediately after submission
       addMessage("user", input);
 
       // Check for greetings
@@ -436,7 +437,7 @@ Format the response in markdown with:
       behavior: "smooth",
     });
   };
-
+  const messages = useResumeStore((state) => state.messages);
   return (
     <React.Fragment>
       <div
@@ -448,16 +449,33 @@ Format the response in markdown with:
           "[&::-webkit-scrollbar-track]:bg-transparent",
           "[&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb]:rounded-full",
           "dark:[&::-webkit-scrollbar-track]:bg-transparent",
-          "dark:[&::-webkit-scrollbar-thumb]:bg-neutral-500"
+          "dark:[&::-webkit-scrollbar-thumb]:bg-neutral-500",
+          messages.length === 0 && "flex items-center justify-center"
         )}>
         <ChatWindow isLoading={loading} />
         <ScrollToBottom isVisible={showScrollButton} onClick={scrollToBottom} />
       </div>
-      <div className="w-full max-w-2xl mx-auto my-5 max-md:mb-15 max-md:mx-3">
+      <div
+        className={cn(
+          "w-full max-w-2xl mx-auto transition-all duration-300",
+          messages.length === 0
+            ? "absolute bottom-1/2 left-1/2 -translate-x-1/2 translate-y-1/2"
+            : "my-5 max-md:mb-15 max-md:mx-3"
+        )}>
+        {messages.length === 0 && (
+          <div className="flex flex-col mb-3 items-center justify-center space-y-2 text-center">
+            <h1 className="text-2xl font-bold">Welcome to UdyatAi</h1>
+            <p className="text-gray-500">
+              Start by asking me anything about resume writing or share your
+              existing resume for updates.
+            </p>
+          </div>
+        )}
         <PlaceholdersAndVanishInput
           placeholders={placeholders}
           onChange={handleChange}
           onSubmit={onSubmit}
+          className={messages.length === 0 ? "scale-110" : ""}
         />
       </div>
     </React.Fragment>
