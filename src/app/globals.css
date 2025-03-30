@@ -1,5 +1,16 @@
 @import "tailwindcss";
 
+/* Adjust height for notch mobiles */
+@media screen and (max-device-width: 812px) and (orientation: portrait) {
+
+  /* Assuming iPhone X, XS, 11 Pro, 12 Mini */
+  body,
+  html {
+    height: calc(100% + constant(safe-area-inset-top));
+    height: calc(100% + env(safe-area-inset-top));
+  }
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
