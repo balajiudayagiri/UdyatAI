@@ -4,7 +4,9 @@
     text-wrap: wrap;
     line-height: 1.75;
     color: var(--text-primary);
-    background-color: var(--background-color);
+    /* background-color: var(--background-color); */
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 2rem;
     padding: 2rem;
     font-family: 'Inter', sans-serif;
     box-sizing: border-box;

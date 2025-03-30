@@ -1,14 +1,53 @@
 "use client";
 
 import { PlaceholdersAndVanishInput } from "@/components/ui/placeholders-and-vanish-input";
-import React, { useState } from "react";
-import ResponseFormatter from "./utility-components/ResponseFormatter";
+import React, { useRef, useState } from "react";
 import { cn } from "@/lib/utils";
+import { ChatWindow } from "./ChatWindow";
+import { useResumeStore } from "@/store/resumeStore";
+import { ScrollToBottom } from "./utility-components/ScrollToBottom";
+
+interface ResumeData {
+  experience: string[];
+  education: string[];
+  skills: string[];
+  achievements: string[];
+  objective: string[];
+}
+
+interface ResumeContext {
+  type: "greeting" | "question" | "resume" | null;
+  missingFields: string[];
+  currentSection: string | null;
+  collectedData: Partial<ResumeData>;
+  isComplete: boolean;
+}
+
+const REQUIRED_FIELDS = [
+  "experience",
+  "education",
+  "skills",
+  "achievements",
+  "objective",
+] as const;
+
+type ResumeField = (typeof REQUIRED_FIELDS)[number];
 
 export function PlaceholdersAndVanishInputDemo() {
+  const addMessage = useResumeStore((state) => state.addMessage);
+  const updateResumeSection = useResumeStore(
+    (state) => state.updateResumeSection
+  );
+
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState("");
   const [input, setInput] = useState("");
+  const [context, setContext] = useState<ResumeContext>({
+    type: null,
+    missingFields: [],
+    currentSection: null,
+    collectedData: {},
+    isComplete: false,
+  });
 
   const placeholders = [
     "Tell me about your work experience",
@@ -19,20 +58,315 @@ export function PlaceholdersAndVanishInputDemo() {
   ];
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    console.log(e.target.value);
     setInput(e.target.value);
+  };
+
+  const detectSection = (input: string): ResumeField | null => {
+    return (
+      REQUIRED_FIELDS.find((field) => input.toLowerCase().includes(field)) ||
+      null
+    );
+  };
+
+  const analyzeResumeInput = (input: string) => {
+    const sections: Partial<ResumeData> = {};
+    const missing: string[] = [];
+
+    REQUIRED_FIELDS.forEach((field) => {
+      const regex = new RegExp(
+        `${field}[:\\s]([^]*?)(?=(?:${REQUIRED_FIELDS.join("|")})[:\\s]|$)`,
+        "i"
+      );
+      const match = input.match(regex);
+
+      if (match && match[1].trim()) {
+        sections[field as keyof ResumeData] = match[1]
+          .trim()
+          .split("\n")
+          .filter((line) => line.trim());
+      } else {
+        missing.push(field);
+      }
+    });
+
+    return { sections, missing };
+  };
+
+  const generateCompleteResume = (data: Partial<ResumeData>) => {
+    return `# Professional Resume
+
+${
+  data.objective
+    ? `## Professional Summary
+${data.objective.join("\n")}`
+    : ""
+}
+
+## Professional Experience
+${data.experience ? data.experience.map((exp) => `- ${exp}`).join("\n") : ""}
+
+## Education
+${data.education ? data.education.map((edu) => `- ${edu}`).join("\n") : ""}
+
+## Skills & Expertise
+${data.skills ? data.skills.map((skill) => `- ${skill}`).join("\n") : ""}
+
+## Key Achievements
+${
+  data.achievements
+    ? data.achievements.map((achievement) => `- ${achievement}`).join("\n")
+    : ""
+}`;
+  };
+
+  const handleGreeting = () => {
+    return {
+      type: "greeting" as const,
+      response: `Hello! 👋 I'm your AI resume assistant. I can help you:
+
+* Create a professional resume from scratch
+* Update existing resume sections
+* Answer questions about resume writing
+* Provide career advice and tips
+* Review and improve your content
+
+Would you like to create a new resume or have specific questions?`,
+    };
+  };
+
+  const handleResumeCreation = (input: string) => {
+    const { sections, missing } = analyzeResumeInput(input);
+
+    if (
+      input.toLowerCase().includes("create") &&
+      input.toLowerCase().includes("resume")
+    ) {
+      if (missing.length === 0) {
+        const completeResume = generateCompleteResume(sections);
+        return {
+          type: "resume" as const,
+          response: `Great! I've created a complete resume based on your information:
+
+${completeResume}
+
+Would you like me to refine any section?`,
+          missingFields: [],
+          collectedData: sections,
+          isComplete: true,
+        };
+      } else {
+        return {
+          type: "resume" as const,
+          response: `I'll help you create a professional resume. Here's what I've got so far:
+
+${Object.keys(sections)
+  .map((section) => `✓ ${section}`)
+  .join("\n")}
+
+I still need information about:
+${missing
+  .map((field) => `- ${field}:\n${getFieldPrompt(field as ResumeField)}`)
+  .join("\n\n")}
+
+Let's start with your ${missing[0]}. Please provide the details.`,
+          missingFields: missing,
+          collectedData: sections,
+          isComplete: false,
+        };
+      }
+    }
+    return null;
+  };
+
+  const getFieldPrompt = (field: ResumeField): string => {
+    const prompts: Record<ResumeField, string> = {
+      experience: `Please include:
+* Your role and company
+* Duration of employment
+* Key responsibilities
+* Notable achievements`,
+      education: `Please include:
+* Degree and major
+* Institution name
+* Graduation year
+* Relevant coursework`,
+      skills: `Please include:
+* Technical skills
+* Soft skills
+* Tools and technologies
+* Certifications`,
+      achievements: `Please include:
+* Quantifiable results
+* Awards and recognition
+* Projects completed
+* Impact made`,
+      objective: `Please include:
+* Target position
+* Career goals
+* Value proposition
+* Industry focus`,
+    };
+    return prompts[field];
+  };
+
+  const handleQuestion = (input: string) => {
+    const commonQuestions = {
+      format: `Here are some resume formatting best practices:
+
+* Keep it to 1-2 pages
+* Use clear headings and consistent formatting
+* Include white space for readability
+* Use bullet points for achievements
+* Choose a professional font`,
+      skills: `When listing skills, remember to:
+
+* Match skills to the job description
+* Include both hard and soft skills
+* Group skills by category
+* Highlight proficiency levels
+* Provide concrete examples`,
+      keywords: `To optimize your resume for ATS:
+
+* Use industry-standard terms
+* Include relevant technical skills
+* Match keywords from job posting
+* Use full terms before abbreviations
+* Avoid graphics and custom fonts`,
+    };
+
+    const questionType = Object.keys(commonQuestions).find((key) =>
+      input.toLowerCase().includes(key)
+    );
+
+    return questionType
+      ? {
+          type: "question" as const,
+          response:
+            commonQuestions[questionType as keyof typeof commonQuestions],
+        }
+      : null;
   };
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // const formData = new FormData(e.currentTarget);
-    // const input = formData.get("input")?.toString();
-    console.log({ input });
     if (!input) return;
 
     try {
       setLoading(true);
-      setResult(""); // Clear previous result
+      addMessage("user", input);
+
+      // Check for greetings
+      if (input.toLowerCase().match(/^(hi|hello|hey|greetings)/)) {
+        const result = handleGreeting();
+        addMessage("assistant", result.response);
+        setContext({ ...context, type: result.type });
+        return;
+      }
+
+      // Handle resume creation intent
+      if (
+        input.toLowerCase().includes("create") &&
+        input.toLowerCase().includes("resume")
+      ) {
+        const result = handleResumeCreation(input);
+        if (result) {
+          addMessage("assistant", result.response);
+          setContext({
+            type: "resume",
+            missingFields: result.missingFields,
+            currentSection: result.missingFields[0] || null,
+            collectedData: {
+              ...context.collectedData,
+              ...result.collectedData,
+            },
+            isComplete: result.isComplete,
+          });
+
+          if (result.isComplete) {
+            updateResumeSection({
+              id: Date.now().toString(),
+              type: "complete",
+              content: result.response,
+            });
+          }
+          return;
+        }
+      }
+
+      // Handle questions
+      if (input.toLowerCase().includes("?")) {
+        const result = handleQuestion(input);
+        if (result) {
+          addMessage("assistant", result.response);
+          setContext({ ...context, type: result.type });
+          return;
+        }
+      }
+
+      // Handle section updates in resume creation mode
+      if (context.type === "resume" && context.currentSection) {
+        const updatedData = {
+          ...context.collectedData,
+          [context.currentSection]: [
+            ...(context.collectedData[
+              context.currentSection as keyof ResumeData
+            ] || []),
+            input,
+          ],
+        };
+
+        setContext((prev) => ({
+          ...prev,
+          collectedData: updatedData,
+        }));
+
+        // Check if this was the last section
+        if (context.missingFields.length === 1) {
+          const completeResume = generateCompleteResume(updatedData);
+          addMessage(
+            "assistant",
+            `Perfect! I've collected all the information. Here's your complete resume:
+
+${completeResume}
+
+Would you like me to refine any section?`
+          );
+
+          updateResumeSection({
+            id: Date.now().toString(),
+            type: "complete",
+            content: completeResume,
+          });
+
+          setContext((prev) => ({
+            ...prev,
+            isComplete: true,
+            missingFields: [],
+            currentSection: null,
+          }));
+          return;
+        }
+
+        // Move to next section
+        const nextFields = context.missingFields.slice(1);
+        const nextPrompt = `Great! Now, let's work on your ${nextFields[0]}:
+${getFieldPrompt(nextFields[0] as ResumeField)}`;
+
+        addMessage("assistant", nextPrompt);
+        setContext((prev) => ({
+          ...prev,
+          missingFields: nextFields,
+          currentSection: nextFields[0],
+        }));
+        return;
+      }
+
+      // Generate resume section
+      const section = detectSection(input);
+      const prompt =
+        context.type === "resume"
+          ? `Create a professional ${context.currentSection} section for: ${input}`
+          : `Create a professional resume section for: ${input}`;
 
       const response = await fetch("/api/generate", {
         method: "POST",
@@ -40,17 +374,13 @@ export function PlaceholdersAndVanishInputDemo() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          prompt: `
-Response Instructions:
-- Use Markdown formatting
-- Use ## for section headings
-- Use bullet points for lists
-- Include code blocks if relevant
-- Keep formatting consistent and clean
-
-User Query: ${input}
-
-Please provide a well-structured response using proper formatting.`,
+          prompt: `${prompt}
+Format the response in markdown with:
+- Clear section headings (##)
+- Bullet points for achievements
+- Keywords relevant to the industry
+- Quantifiable results where possible
+- Professional tone and language`,
         }),
       });
 
@@ -62,58 +392,66 @@ Please provide a well-structured response using proper formatting.`,
       if (data.error) {
         throw new Error(data.error);
       }
-      setResult(data.message);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (error: any) {
+
+      addMessage("assistant", data.message);
+
+      if (section) {
+        updateResumeSection({
+          id: Date.now().toString(),
+          type:
+            section === "achievements" || section === "objective"
+              ? "summary"
+              : section,
+          content: data.message,
+        });
+      }
+    } catch (error: unknown) {
       console.error("Generation error:", error);
-      setResult("Error: Failed to generate resume content. Please try again.");
+      addMessage(
+        "assistant",
+        "Error: Failed to generate resume content. Please try again."
+      );
     } finally {
       setLoading(false);
     }
   };
 
+  const [showScrollButton, setShowScrollButton] = useState(false);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
+
+  // Add this new function
+  const handleScroll = () => {
+    if (!chatContainerRef.current) return;
+
+    const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
+    const bottomThreshold = 100; // Show button when user scrolls up more than 100px from bottom
+    setShowScrollButton(
+      scrollHeight - scrollTop - clientHeight > bottomThreshold
+    );
+  };
+
+  const scrollToBottom = () => {
+    chatContainerRef.current?.scrollTo({
+      top: chatContainerRef.current.scrollHeight,
+      behavior: "smooth",
+    });
+  };
+
   return (
     <React.Fragment>
       <div
+        ref={chatContainerRef}
+        onScroll={handleScroll}
         className={cn(
-          "grow overflow-y-auto relative px-4 w-full",
+          "grow overflow-y-auto relative md:px-4 w-full",
           "[&::-webkit-scrollbar]:w-1",
           "[&::-webkit-scrollbar-track]:bg-transparent",
           "[&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb]:rounded-full",
-          " dark:[&::-webkit-scrollbar-track]:bg-transparent",
+          "dark:[&::-webkit-scrollbar-track]:bg-transparent",
           "dark:[&::-webkit-scrollbar-thumb]:bg-neutral-500"
         )}>
-        {!loading && !result && (
-          <div className="flex flex-col items-center justify-center h-full py-10">
-            <h2 className="mb-5 sm:mb-10 text-xl text-center sm:text-5xl dark:text-white text-black">
-              UdyatAi
-            </h2>
-            <p className="mb-10 sm:mb-20 text-sm text-center sm:text-md dark:text-white text-black">
-              Generate impressive resumes powered by AI in minutes
-            </p>
-          </div>
-        )}
-
-        {loading && (
-          <div className="space-y-4 w-full max-w-2xl mx-auto">
-            {/* Title Skeleton */}
-            <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse mx-auto w-48"></div>
-            {/* Subtitle Skeleton */}
-            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse mx-auto w-64"></div>
-            {/* Content Loading Skeleton */}
-            <div className="mt-8 space-y-3">
-              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse"></div>
-              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse w-5/6"></div>
-              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse w-4/6"></div>
-            </div>
-          </div>
-        )}
-
-        {result && (
-          <div className="mt-8 p-6 max-w-5xl w-full mx-auto ">
-            <ResponseFormatter response={result} />
-          </div>
-        )}
+        <ChatWindow isLoading={loading} />
+        <ScrollToBottom isVisible={showScrollButton} onClick={scrollToBottom} />
       </div>
       <div className="w-full max-w-2xl mx-auto my-5 max-md:mb-15 max-md:mx-3">
         <PlaceholdersAndVanishInput
