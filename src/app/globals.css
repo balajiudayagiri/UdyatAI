@@ -31,7 +31,29 @@
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--foreground);
+  color: var(--background);
   font-family: Arial, Helvetica, sans-serif;
+  @apply bg-gradient-to-br from-slate-100 via-slate-200 to-slate-300;
+}
+
+/* Add to your globals.css */
+.bg-apple-card {
+  @apply bg-white backdrop-blur-md shadow-xl border border-slate-200;
+}
+
+.text-apple-primary {
+  @apply text-slate-800;
+}
+
+.text-apple-secondary {
+  @apply text-slate-500;
+}
+
+.text-apple-accent {
+  @apply text-blue-500;
+}
+
+.bg-apple-accent {
+  @apply bg-blue-50;
 }
