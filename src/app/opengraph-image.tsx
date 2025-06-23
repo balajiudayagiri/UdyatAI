@@ -1,6 +1,4 @@
 import { ImageResponse } from "next/og";
-import { join } from "path";
-import { readFile } from "fs/promises";
 
 // Image metadata
 export const alt = "UdyatAI: AI Career Guide & Resume Analyzer";
@@ -13,14 +11,6 @@ export const contentType = "image/png";
 
 // Image generation
 export default async function Image() {
-  // Fonts
-  const interRegularData = readFile(
-    join(process.cwd(), "src/assets/fonts/Inter-Regular.ttf")
-  );
-  const interSemiBoldData = readFile(
-    join(process.cwd(), "src/assets/fonts/Inter-SemiBold.ttf")
-  );
-
   return new ImageResponse(
     (
       <div
@@ -43,7 +33,7 @@ export default async function Image() {
             justifyItems: "center",
             fontSize: 80,
             fontWeight: 700,
-            fontFamily: '"Inter"',
+            fontFamily: "sans-serif",
             background:
               "linear-gradient(to bottom right, #000000 25%, #4a4a4a 100%)",
             backgroundClip: "text",
@@ -57,7 +47,7 @@ export default async function Image() {
           style={{
             fontSize: 32,
             fontWeight: 400,
-            fontFamily: '"Inter"',
+            fontFamily: "sans-serif",
             background:
               "linear-gradient(to bottom right, #71717a 25%, #3f3f46 100%)",
             backgroundClip: "text",
@@ -74,20 +64,6 @@ export default async function Image() {
     ),
     {
       ...size,
-      fonts: [
-        {
-          name: "Inter",
-          data: await interRegularData,
-          style: "normal",
-          weight: 400,
-        },
-        {
-          name: "Inter",
-          data: await interSemiBoldData,
-          style: "normal",
-          weight: 700,
-        },
-      ],
     }
   );
 }
