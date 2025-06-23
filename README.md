@@ -9,9 +9,11 @@
 
 [![Google Gemini](https://img.shields.io/badge/Google_Gemini-blue?style=for-the-badge&logo=google&logoColor=white)](https://ai.google.dev/models/gemini)
 
-UdyatAI is an intelligent, AI-powered platform designed to elevate your career by providing in-depth resume analysis and tailored cover letter generation. It acts as your personal career strategy assistant, helping you optimize your job application materials and gain valuable insights into your professional profile.
+[UdyatAI](https://udyat-ai.vercel.app/) is an intelligent, AI-powered platform designed to elevate your career by providing in-depth resume analysis and tailored cover letter generation. It acts as your personal career strategy assistant, helping you optimize your job application materials and gain valuable insights into your professional profile.
 
-![alt text](image.png)
+[![alt text](image.png)](https://udyat-ai.vercel.app/)
+
+Link: [https://udyat-ai.vercel.app/](https://udyat-ai.vercel.app/)
 
 ## ✨ Features
 
