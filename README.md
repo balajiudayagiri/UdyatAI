@@ -54,8 +54,7 @@ Follow these instructions to get a copy of the project up and running on your lo
 
     ```sh
     npm install
-    # or
-    yarn install
+
     ```
 
 3.  **Set up environment variables:**
@@ -79,8 +78,7 @@ Follow these instructions to get a copy of the project up and running on your lo
 
     ```sh
     npm run dev
-    # or
-    yarn dev
+   
     ```
 
     The application should now be running on `http://localhost:3000`.
