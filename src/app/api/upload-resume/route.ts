@@ -43,6 +43,7 @@ export async function POST(req: NextRequest) {
     You are a world-class career coach and resume analyst.
     Given the following resume data, extract and return a JSON object with these keys:
     
+    - candidateName: The full name of the candidate.
     - summary: A concise summary of what this resume is for (role, industry, seniority).
     - skills: An array of objects, each with:
         - name: The skill name.
@@ -59,6 +60,7 @@ export async function POST(req: NextRequest) {
     
     Example output:
     {
+      "candidateName": "John Doe",
       "summary": "...",
       "skills": [
         {
