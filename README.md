@@ -114,6 +114,6 @@ This project is licensed under the MIT License - see the LICENSE.md file for det
 
 - Google Gemini for the powerful AI capabilities.
 - pdf2json for PDF parsing.
-- Zustand for state management.
+<!-- - Zustand for state management. -->
 - Framer Motion for animations.
 - Chart.js for data visualization.
